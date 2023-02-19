@@ -190,53 +190,48 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         return self.calcAction(gameState, 0, 0, -math.inf, math.inf)[0]
     
     def calcAction(self, gameState, curDepth, agent, alpha, beta):
-        #base case: game ended or we've hit depth
-        if gameState.isWin() or gameState.isLose() or curDepth == self.depth * gameState.getNumAgents():
+        numAgents = gameState.getNumAgents()
+        #base case
+        if gameState.isWin() or gameState.isLose() or curDepth == self.depth * numAgents:
             return (None, self.evaluationFunction(gameState))
-        
-        #increment agent index
-        next_agent = 0 if agent == gameState.getNumAgents() - 1 else agent + 1
+            
+        if curDepth != 0:
+            agent = 0 if agent == numAgents - 1 else agent + 1            
 
-        scores = []
-        bestAct = gameState.getLegalActions()[0]
-        bestScore = 0
-        t_alpha = -math.inf
-        t_beta = math.inf
+        t_max =  -math.inf
+        t_min =  math.inf
+        best_act = ""
         for action in gameState.getLegalActions(agent):
             successor = gameState.generateSuccessor(agent, action)
-            res_act, res_score = self.calcAction(successor, curDepth + 1, next_agent, alpha, beta)
-            
-            #eval score against alpha beta
-            if agent == 0: #pacman
-                if res_score > t_alpha:
-                    t_alpha = res_score
-                    bestAct = action
-                if t_alpha > beta: return (bestAct, res_score) #prune
-                if t_alpha > alpha:
-                    alpha = t_alpha
-                    bestAct = res_act
-                    bestScore = t_alpha
-            else: #ghosts
-                if res_score < t_beta:
-                    t_beta = res_score
-                    bestAct = action
-                if t_beta < alpha: return (bestAct, res_score) #prune
-                if t_beta < beta:
-                    beta = t_beta
-                    bestAct = res_act
-                    bestScore = t_beta
+            res_act, res_score = self.calcAction(successor, curDepth + 1, agent, alpha, beta)
+            if agent == 0:
+                v = max(res_score, t_max)
+                if v != t_max:
+                    t_max = v
+                    best_act = action
+                if v > beta:
+                    return best_act, t_max
+                alpha = max(alpha, v)
 
-            # scores.append(res_score)
-        #bestScore, actInd = self.getBestScore(agent, scores)
-        # print(bestAct, bestScore)
-        return (bestAct, bestScore)
-    
-        
+            else:
+                v = min(res_score, t_min)
+                if v != t_min:
+                    t_min = v
+                    best_act = action
+                if v < alpha:
+                    return best_act, t_min
+                beta = min(beta, v)
 
-    # def getBestScore(self, agent, scores):
-        if agent == 0: #pacman
-            return max(scores), scores.index(max(scores)) #should return the index of the action taken, since they're always the same order
-        return min(scores), scores.index(min(scores)) #ghosts
+        if agent == 0: return best_act, t_max
+        else: return best_act, t_min
+
+
+    def min_value(self, result, t_min, alpha, beta):
+        value = min(t_min, result)
+        if value < alpha:
+            return value, beta, True
+        beta = min(beta,value)
+        return value, beta,  False
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
