@@ -154,17 +154,19 @@ class MinimaxAgent(MultiAgentSearchAgent):
         return self.calcAction(gameState, 0, 0)[0] #action, score
     
     def calcAction(self, gameState, curDepth, agent):
+        numAgents = gameState.getNumAgents()
         #base case: game ended or we've hit depth
-        if gameState.isWin() or gameState.isLose() or curDepth == self.depth * gameState.getNumAgents():
+        if gameState.isWin() or gameState.isLose() or curDepth == self.depth * numAgents:
             return (None, self.evaluationFunction(gameState))
         
         #increment agent index
-        next_agent = 0 if agent == gameState.getNumAgents() - 1 else agent + 1
+        if curDepth != 0:
+            agent = 0 if agent == numAgents - 1 else agent + 1  
 
         scores = []
         for action in gameState.getLegalActions(agent):
             successor = gameState.generateSuccessor(agent, action)
-            res_act, res_score = self.calcAction(successor, curDepth + 1, next_agent)
+            res_act, res_score = self.calcAction(successor, curDepth + 1, agent)
             scores.append(res_score)
         
         bestScore, actInd = self.getBestScore(agent, scores)
@@ -191,10 +193,11 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     
     def calcAction(self, gameState, curDepth, agent, alpha, beta):
         numAgents = gameState.getNumAgents()
-        #base case
+        #base case: game ended or we've hit depth
         if gameState.isWin() or gameState.isLose() or curDepth == self.depth * numAgents:
             return (None, self.evaluationFunction(gameState))
-            
+
+        #increment agent index 
         if curDepth != 0:
             agent = 0 if agent == numAgents - 1 else agent + 1            
 
@@ -224,14 +227,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
         if agent == 0: return best_act, t_max
         else: return best_act, t_min
-
-
-    def min_value(self, result, t_min, alpha, beta):
-        value = min(t_min, result)
-        if value < alpha:
-            return value, beta, True
-        beta = min(beta,value)
-        return value, beta,  False
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
