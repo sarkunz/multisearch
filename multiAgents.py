@@ -207,7 +207,8 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         for action in gameState.getLegalActions(agent):
             successor = gameState.generateSuccessor(agent, action)
             res_act, res_score = self.calcAction(successor, curDepth + 1, agent, alpha, beta)
-            if agent == 0:
+            
+            if agent == 0: #pacman
                 v = max(res_score, t_max)
                 if v != t_max:
                     t_max = v
@@ -215,8 +216,8 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 if v > beta:
                     return best_act, t_max
                 alpha = max(alpha, v)
-
-            else:
+            
+            else: #ghosts
                 v = min(res_score, t_min)
                 if v != t_min:
                     t_min = v
@@ -242,7 +243,33 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.calcAction(gameState, 0, 0)[0] #action, score
+    
+    def calcAction(self, gameState, curDepth, agent):
+        numAgents = gameState.getNumAgents()
+        #base case: game ended or we've hit depth
+        if gameState.isWin() or gameState.isLose() or curDepth == self.depth * numAgents:
+            return (None, self.evaluationFunction(gameState))
+        
+        #increment agent index
+        if curDepth != 0:
+            agent = 0 if agent == numAgents - 1 else agent + 1  
+
+        scores = []
+        for action in gameState.getLegalActions(agent):
+            successor = gameState.generateSuccessor(agent, action)
+            res_act, res_score = self.calcAction(successor, curDepth + 1, agent)
+            scores.append(res_score)
+        
+        bestScore, actInd = self.getBestScore(agent, scores)
+        return (gameState.getLegalActions()[actInd], bestScore)
+
+    def getBestScore(self, agent, scores):
+        if agent == 0: #pacman
+            return max(scores), scores.index(max(scores)) #should return the index of the action taken, since they're always the same order
+        else: #ghosts
+            score = sum(scores) * (1/len(scores)) #score should be sum(prob_i * score_i)
+            return score, random.randint(0,len(scores) - 1) #return a random action
 
 def betterEvaluationFunction(currentGameState):
     """
