@@ -71,26 +71,23 @@ class ReflexAgent(Agent):
         newPos = successorGameState.getPacmanPosition()
         newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
-        newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+        #newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        # print("GHOSTS", newGhostStates)
-        # print("SCARED", newScaredTimes)
-        # print("FOOD", newFood)
 
         foodDists = [util.manhattanDistance(f, newPos) for f in newFood.asList()]
-        closestFood = 0 if len(foodDists) == 0 else min(foodDists)
+        closestFood = 1 if len(foodDists) == 0 else min(foodDists)
 
         ghostDists = [util.manhattanDistance(g.getPosition(), newPos) for g in newGhostStates]
-        closestGhost = 0 if len(ghostDists) == 0 else min(ghostDists)
+        closestGhost = 1 if len(ghostDists) == 0 else min(ghostDists)
 
         if closestGhost == 0:
             return -10000
         
         #punish stopping
-        stop = -5 if action == "Stop" else 0
+        stop = -2 if action == "Stop" else 0
 
-        return successorGameState.getScore() - (10 - closestGhost) + (10 - closestFood) + stop
+        return successorGameState.getScore() - (1/closestGhost) + (1/closestFood) + stop
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -279,7 +276,34 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # Useful information you can extract from a GameState (pacman.py)
+    successorGameState = currentGameState
+    newPos = successorGameState.getPacmanPosition()
+    newFood = successorGameState.getFood()
+    newGhostStates = successorGameState.getGhostStates()
+    newCapsules = successorGameState.getCapsules()
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+
+    "*** YOUR CODE HERE ***"
+
+    foodDists = [util.manhattanDistance(f, newPos) for f in newFood.asList()]
+    closestFood = 1 if len(foodDists) == 0 else min(foodDists)
+
+    capsuleDists = [util.manhattanDistance(f, newPos) for f in newCapsules]
+    closestCapsule = 1 if len(capsuleDists) == 0 else min(capsuleDists)
+
+    ghostDists = [util.manhattanDistance(g.getPosition(), newPos) for g in newGhostStates]
+    badGhosts = []
+    for ind, gd in enumerate(ghostDists):
+        if gd > newScaredTimes[ind]: #if we have enough scared time to eat it, we're good
+            badGhosts.append(gd)
+    closestGhost = 1 if len(badGhosts) == 0 else min(badGhosts)
+
+    if closestGhost == 0:
+        return -10000
+
+    return successorGameState.getScore() - (1/closestGhost) + (1/closestFood) + (1/closestCapsule)
+
 
 # Abbreviation
 better = betterEvaluationFunction
